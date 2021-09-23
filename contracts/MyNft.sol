@@ -11,7 +11,4 @@ contract MyNft is ERC721PresetMinterPauserAutoId{
         
     }
 
-    
-
-
 } 
