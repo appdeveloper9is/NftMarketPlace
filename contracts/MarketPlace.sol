@@ -22,6 +22,7 @@ contract NFTMarket is ReentrancyGuard {
     uint itemId;
     address nftContract;
     uint256 tokenId;
+    uint256 price;
     address payable seller;
     address payable owner;
     bool forSale;
@@ -30,16 +31,17 @@ contract NFTMarket is ReentrancyGuard {
 
   mapping(uint256 => MarketItem) private idToMarketItem;
 
-  event MarketItemCreated ( uint indexed itemId,address indexed nftContract,uint256 indexed tokenId,address seller,address owner,bool sold
+
+  event MarketItemCreated ( uint indexed itemId,address indexed nftContract,uint256 indexed tokenId,uint256 price,address seller,address owner,bool sold
   );
-
-  /* Returns the listing price of the contract */
-
-
-   function createMarketItem(
+  
+  
+  
+   function listItem(
     address nftContract,
-    uint256 tokenId
-  ) public payable nonReentrant {
+    uint256 tokenId,
+    uint256 price
+  ) public {
 
 
     _itemIds.increment();
@@ -49,90 +51,66 @@ contract NFTMarket is ReentrancyGuard {
       itemId,
       nftContract,
       tokenId,
+      price,
       payable(msg.sender),
       payable(address(0)),
-      false
+      true
     );
-
-    IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
       emit MarketItemCreated(
       itemId,
       nftContract,
       tokenId,
+      price,
       msg.sender,
       address(0),
-      false
+      true
     );
   }
   
 
   
-  
-  function listUnList(uint256 _tokenId) public{
-      
-    require(msg.sender != address(0));
-    MarketItem memory market = idToMarketItem[_tokenId];
-    // require that token should exist
-    // get the token's owner
-    address tokenOwner = IERC721(market.nftContract).ownerOf(_tokenId);
-    // check that token's owner should be equal to the caller of the function
-    require(tokenOwner == msg.sender);
-    // get that token from all crypto boys mapping and create a memory of it defined as (struct => CryptoBoy)
-   
-    // if token's forSale is false make it true and vice versa
-    if(market.forSale) {
-      market.forSale = false;
-    } else {
-      market.forSale = true;
-    }
-    // set and update that token in the mapping
-    idToMarketItem[_tokenId] = market;
-      
-}
-      // by a token by passing in the token's id
+ 
   function buyNft(uint256 _tokenId) public payable {
      
-    // check if the function caller is not an zero account address
+  
     require(msg.sender != address(0), "address should not be zero");
-    MarketItem storage market = idToMarketItem[_tokenId];
-    // check if the token id of the token being bought exists or not
-
-    // get the token's owner
-    address tokenOwner = IERC721(market.nftContract).ownerOf(_tokenId);
-    // token's owner should not be an zero address account
-    require(tokenOwner != address(0), "should not be zero address" );
-    // the one who wants to buy the token should not be the token's owner
-    require(tokenOwner != msg.sender, "not owner");
-    // get that token from all crypto boys mapping and create a memory of it defined as (struct => CryptoBoy)
+   
     
-    // price sent in to buy should be equal to or more than the token's price
-    // token should be for sale
+    
+    MarketItem storage market = idToMarketItem[_tokenId];
+  
+    address tokenOwner = IERC721(market.nftContract).ownerOf(_tokenId);
+    
+    require(msg.value == market.price , "amount not not equal to listing price");
+
+    require(tokenOwner != address(0), "should not be zero address" );
+   
+    require(tokenOwner != msg.sender, "not owner");
+  
     require(market.forSale, "not for sale");
-    // transfer the token from owner to the caller of the function (buyer)
-    IERC721(market.nftContract).transferFrom(address(this), msg.sender, _tokenId);
-    // get owner of the token
+   
+    IERC721(market.nftContract).transferFrom(tokenOwner, msg.sender, _tokenId);
+  
     address payable sendTo = market.owner;
-    // send token's worth of ethers to the owner
+  
     payable(sendTo).transfer(msg.value);
-    // update the token's previous owner
+ 
     delete idToMarketItem[_tokenId];
       
   }
   
    function changeTokenPrice(uint256 _tokenId, uint256 _newPrice) public {
-    // require caller of the function is not an empty address
-    require(msg.sender != address(0));
-    // require that token should exist
-     MarketItem storage market = idToMarketItem[_tokenId];
-    // get the token's owner
-    address tokenOwner = IERC721(market.nftContract).ownerOf(_tokenId);
-    // check that token's owner should be equal to the caller of the function
-    require(tokenOwner == msg.sender);
-    // get that token from all crypto boys mapping and create a memory of it defined as (struct => CryptoBoy)
    
-    // update token's price with new price
-    // set and update that token in the mapping
+    require(msg.sender != address(0), "should not be zero address");
+ 
+     MarketItem storage market = idToMarketItem[_tokenId];
+  
+    address tokenOwner = IERC721(market.nftContract).ownerOf(_tokenId);
+   
+    require(tokenOwner == msg.sender, "caller should be owner");
+    
     idToMarketItem[_tokenId] = market;
   }
 
 }
+
