@@ -104,6 +104,8 @@ contract NFTMarket is ReentrancyGuard {
     require(msg.sender != address(0), "should not be zero address");
  
      MarketItem storage market = idToMarketItem[_tokenId];
+     
+     market.price = _newPrice;
   
     address tokenOwner = IERC721(market.nftContract).ownerOf(_tokenId);
    
@@ -113,4 +115,3 @@ contract NFTMarket is ReentrancyGuard {
   }
 
 }
-
