@@ -6,7 +6,7 @@ contract MyNft is ERC721PresetMinterPauserAutoId{
 
         ERC721PresetMinterPauserAutoId public nft;
 
-    constructor() ERC721PresetMinterPauserAutoId("MyNft","MN","https://gas-free-nft.herokuapp.com/getMetaData/"){
+    constructor() ERC721PresetMinterPauserAutoId("MyNft","MN","https://opensea-creatures-api.herokuapp.com/api/creature/"){
 
         
     }

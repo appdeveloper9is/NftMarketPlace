@@ -46,16 +46,17 @@ module.exports = {
     //
     development: {
       host: "127.0.0.1",
-      port: 8545,
+      port: 7545,
       network_id: "*" ,// Match any network id      // Any network (default: none)
     },
     rinkeby: {
-      provider: () => new HDWalletProvider("1cdd97e63ba30c84a4afe059f666709daa414602831ac5d64c06975e70b4b240", `https://rinkeby.infura.io/v3/3b0cf91879e6480d945e55a1b79db61d`),
+      provider: () => new HDWalletProvider("1cdd97e63ba30c84a4afe059f666709daa414602831ac5d64c06975e70b4b240", `https://eth-rinkeby.alchemyapi.io/v2/u9Kvxu7pc8ue0M9tZ7hg0ApzAXOcEQTH`),
       network_id: 4, // eslint-disable-line camelcase
-      // gas: 5500000, // Ropsten has a lower block limit than mainnet
-      // confirmations: 2, // # of confs to wait between deployments. (default: 0)
-      // timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
-      // skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
+      // gas: 3000000, // Ropsten has a lower block limit than mainnet
+      //  confirmations: 2, // # of confs to wait between deployments. (default: 0)
+      //  timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
+      //  skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
+      //  networkcheckTimeout: 10000000, // # of seconds to wait for network check
     },
 
     // Another network with more advanced options...
