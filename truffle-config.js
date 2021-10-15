@@ -50,8 +50,9 @@ module.exports = {
       network_id: "*" ,// Match any network id      // Any network (default: none)
     },
     rinkeby: {
-      provider: () => new HDWalletProvider("1cdd97e63ba30c84a4afe059f666709daa414602831ac5d64c06975e70b4b240", `https://eth-rinkeby.alchemyapi.io/v2/u9Kvxu7pc8ue0M9tZ7hg0ApzAXOcEQTH`),
-      network_id: 4, // eslint-disable-line camelcase
+      provider: () => new HDWalletProvider("1cdd97e63ba30c84a4afe059f666709daa414602831ac5d64c06975e70b4b240", `https://rinkeby.infura.io/v3/a44491b2e0774ebfab5c8eb71e64035e`),
+      network_id: 4,
+       // eslint-disable-line camelcase
       // gas: 3000000, // Ropsten has a lower block limit than mainnet
       //  confirmations: 2, // # of confs to wait between deployments. (default: 0)
       //  timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)

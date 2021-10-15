@@ -11,7 +11,8 @@ contract NFTMarket is ReentrancyGuard {
   using Counters for Counters.Counter;
   Counters.Counter private _itemIds;
   Counters.Counter private _itemsSold;
-
+  uint256 private counter = 0;
+  
   address payable owner;
 
   constructor() {
@@ -44,7 +45,7 @@ contract NFTMarket is ReentrancyGuard {
   ) public {
 
 
-    _itemIds.increment();
+   
     uint256 itemId = _itemIds.current();
   
     idToMarketItem[itemId] =  MarketItem(
@@ -56,6 +57,7 @@ contract NFTMarket is ReentrancyGuard {
       payable(address(0)),
       true
     );
+    
       emit MarketItemCreated(
       itemId,
       nftContract,
@@ -65,21 +67,45 @@ contract NFTMarket is ReentrancyGuard {
       address(0),
       true
     );
+    _itemIds.increment();
+    
+    counter++;
   }
   
+  function getListing() public view returns (MarketItem[] memory){
+      MarketItem[] memory listedItems = new MarketItem[](counter);
+      if (counter ==0){
+          return listedItems;
+        }
+      for (uint i = 0; i < counter; i++) {
+          if (idToMarketItem[i].forSale == true){
+             listedItems[i]=idToMarketItem[i];
+              
+          }
+         } 
+        return listedItems;
+       
+    }
+    
+    
+  function unList(uint256 _itemId) public {
+     
+     delete idToMarketItem[_itemId];
+    
+      }
+    
 
-  
  
-  function buyNft(uint256 _tokenId) public payable {
+  function buyNft(uint256 _itemId) public payable {
      
   
     require(msg.sender != address(0), "address should not be zero");
    
     
     
-    MarketItem storage market = idToMarketItem[_tokenId];
+    MarketItem storage market = idToMarketItem[_itemId];
   
-    address tokenOwner = IERC721(market.nftContract).ownerOf(_tokenId);
+    address tokenOwner = IERC721(market.nftContract).ownerOf(market.tokenId);
     
     require(msg.value == market.price , "amount not not equal to listing price");
 
@@ -89,13 +115,15 @@ contract NFTMarket is ReentrancyGuard {
   
     require(market.forSale, "not for sale");
    
-    IERC721(market.nftContract).transferFrom(tokenOwner, msg.sender, _tokenId);
+    IERC721(market.nftContract).transferFrom(market.seller, msg.sender, market.tokenId);
   
     address payable sendTo = market.owner;
   
     payable(sendTo).transfer(msg.value);
  
-    delete idToMarketItem[_tokenId];
+    delete idToMarketItem[_itemId];
+    
+    counter--;
       
   }
   
