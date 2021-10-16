@@ -2,14 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC721/presets/ERC721PresetMinterPauserAutoId.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "../common/ContentMixin.sol";
-import "../common/NativeMetaTransaction.sol";
+import "./common/ContentMixin.sol";
+import "./common/NativeMetaTransaction.sol";
 
 contract OwnableDelegateProxy {}
 
@@ -22,10 +19,8 @@ contract ProxyRegistry {
  * ERC721Tradable - ERC721 contract that whitelists a trading address, and has minting functionality.
  */
  abstract contract ERC721Tradable is ERC721PresetMinterPauserAutoId,Ownable, ContextMixin, NativeMetaTransaction {
-    using SafeMath for uint256;
 
     address proxyRegistryAddress;
-    uint256 private _currentTokenId = 0;
 
     constructor(
         string memory _name,
