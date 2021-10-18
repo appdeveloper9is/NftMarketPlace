@@ -15,9 +15,8 @@ contract NFTMarket is ReentrancyGuard,Ownable {
 
     constructor(address _nftToken,uint256 _fee) {
         token = IERC721(_nftToken);
-        fee = _fee;
+        fee = _fee; // 20 => 20%
     }
-
 
 
     struct MarketItem {
