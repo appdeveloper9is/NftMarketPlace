@@ -1,6 +1,8 @@
-const Migrations = artifacts.require("MyNft");
-
+const MyNft = artifacts.require("MyNft");
+const MarketPlace = artifacts.require("MarketPlace")
 
 module.exports = function (deployer) {
-  deployer.deploy(Migrations);
+ await deployer.deploy(MyNft);
+ let nft = await MyNft.deployed()
+  deployer.deploy(MarketPlace,nft.address);
 };

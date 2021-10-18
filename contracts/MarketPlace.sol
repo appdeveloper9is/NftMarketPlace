@@ -4,17 +4,21 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTMarket is ReentrancyGuard {
+contract NFTMarket is ReentrancyGuard,Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _itemIds;
     uint256 private counter = 0;
-
+    uint256 private fee;
     IERC721 private token;
 
-    constructor(address _nftToken) {
+    constructor(address _nftToken,uint256 _fee) {
         token = IERC721(_nftToken);
+        fee = _fee;
     }
+
+
 
     struct MarketItem {
         uint256 itemId;
@@ -49,6 +53,14 @@ contract NFTMarket is ReentrancyGuard {
     );
 
     event PriceChanged(uint256 _itemId, uint256 oldPrice, uint256 newPrice);
+
+    function setFee(uint256 _fee)public onlyOwner{
+        fee = _fee;
+    }
+
+    function getFee() public view returns(uint256){
+        return fee;
+    }
 
     function listItem(uint256 tokenId, uint256 price) public {
         require(
