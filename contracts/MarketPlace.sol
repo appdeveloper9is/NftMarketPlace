@@ -10,20 +10,17 @@ contract NFTMarket is ReentrancyGuard {
     Counters.Counter private _itemIds;
     uint256 private counter = 0;
 
-    address payable owner;
     IERC721 private token;
 
     constructor(address _nftToken) {
         token = IERC721(_nftToken);
-        owner = payable(msg.sender);
     }
 
     struct MarketItem {
         uint256 itemId;
         uint256 tokenId;
         uint256 price;
-        address payable seller;
-        address payable owner;
+        address owner;
         bool forSale;
     }
 
@@ -33,13 +30,28 @@ contract NFTMarket is ReentrancyGuard {
         uint256 indexed itemId,
         uint256 indexed tokenId,
         uint256 price,
-        address seller,
         address owner,
-        bool sold
+        bool forSale
+    );
+    event MarketItemUnListed(
+        uint256 indexed itemId,
+        uint256 indexed tokenId,
+        uint256 price,
+        address owner,
+        bool forSale
+    );
+    event MarketItemSold(
+        uint256 indexed itemId,
+        uint256 indexed tokenId,
+        uint256 price,
+        address owner,
+        bool forSale
     );
 
+    event PriceChanged(uint256 _itemId, uint256 oldPrice, uint256 newPrice);
+
     function listItem(uint256 tokenId, uint256 price) public {
-            require(
+        require(
             token.ownerOf(tokenId) == msg.sender,
             "You don't own this item"
         );
@@ -55,18 +67,10 @@ contract NFTMarket is ReentrancyGuard {
             tokenId,
             price,
             payable(msg.sender),
-            payable(address(0)),
             true
         );
 
-        emit MarketItemCreated(
-            itemId,
-            tokenId,
-            price,
-            msg.sender,
-            address(0),
-            true
-        );
+        emit MarketItemCreated(itemId, tokenId, price, msg.sender, true);
         _itemIds.increment();
 
         counter++;
@@ -86,9 +90,17 @@ contract NFTMarket is ReentrancyGuard {
     }
 
     function unList(uint256 _itemId) public {
-          require(
-            idToMarketItem[_itemId].owner == msg.sender,
-            "you can not unList this item"
+        MarketItem storage market = idToMarketItem[_itemId];
+        require(
+            market.owner == msg.sender,
+            "you can not unList this item, asyou are not the owner"
+        );
+        emit MarketItemUnListed(
+            market.itemId,
+            market.tokenId,
+            market.price,
+            market.owner,
+            market.forSale
         );
         delete idToMarketItem[_itemId];
     }
@@ -98,9 +110,7 @@ contract NFTMarket is ReentrancyGuard {
 
         MarketItem storage market = idToMarketItem[_itemId];
 
-        address tokenOwner = IERC721(token).ownerOf(
-            market.tokenId
-        );
+        address tokenOwner = IERC721(token).ownerOf(market.tokenId);
 
         require(
             msg.value == market.price,
@@ -113,19 +123,21 @@ contract NFTMarket is ReentrancyGuard {
 
         require(market.forSale, "not for sale");
 
-        IERC721(token).transferFrom(
-            market.seller,
-            msg.sender,
-            market.tokenId
-        );
+        IERC721(token).transferFrom(market.owner, msg.sender, market.tokenId);
 
-        address payable sendTo = market.owner;
-
-        payable(sendTo).transfer(msg.value);
+        payable(market.owner).transfer(msg.value);
 
         delete idToMarketItem[_itemId];
 
         counter--;
+
+        emit MarketItemSold(
+            market.itemId,
+            market.tokenId,
+            market.price,
+            market.owner,
+            market.forSale
+        );
     }
 
     function changeTokenPrice(uint256 _tokenId, uint256 _newPrice) public {
@@ -133,12 +145,14 @@ contract NFTMarket is ReentrancyGuard {
 
         MarketItem storage market = idToMarketItem[_tokenId];
 
-        market.price = _newPrice;
-
+        uint256 _oldPrice = market.price;
         address tokenOwner = IERC721(token).ownerOf(_tokenId);
 
         require(tokenOwner == msg.sender, "caller should be owner");
+        market.price = _newPrice;
 
         idToMarketItem[_tokenId] = market;
+
+        emit PriceChanged(_tokenId, _oldPrice, _newPrice);
     }
 }
