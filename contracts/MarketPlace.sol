@@ -39,6 +39,15 @@ contract NFTMarket is ReentrancyGuard {
     );
 
     function listItem(uint256 tokenId, uint256 price) public {
+            require(
+            token.ownerOf(tokenId) == msg.sender,
+            "You don't own this item"
+        );
+        require(
+            token.isApprovedForAll(msg.sender, address(this)),
+            "Nft is not Approved. First Approve and then List"
+        );
+
         uint256 itemId = _itemIds.current();
 
         idToMarketItem[itemId] = MarketItem(
@@ -77,6 +86,10 @@ contract NFTMarket is ReentrancyGuard {
     }
 
     function unList(uint256 _itemId) public {
+          require(
+            idToMarketItem[_itemId].owner == msg.sender,
+            "you can not unList this item"
+        );
         delete idToMarketItem[_itemId];
     }
 
