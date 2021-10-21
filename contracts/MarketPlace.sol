@@ -62,15 +62,17 @@ contract NFTMarket is ReentrancyGuard,Ownable {
     }
 
     function listItem(uint256 tokenId, uint256 price) public {
+        require(msg.sender != address(0), "address should not be zero");
         require(
             token.ownerOf(tokenId) == msg.sender,
             "You don't own this item"
         );
         require(
-            token.isApprovedForAll(msg.sender, address(this)),
+            token.getApproved(tokenId) == address(this),
             "Nft is not Approved. First Approve and then List"
         );
 
+        _itemIds.increment();
         uint256 itemId = _itemIds.current();
 
         idToMarketItem[itemId] = MarketItem(
@@ -82,7 +84,6 @@ contract NFTMarket is ReentrancyGuard,Ownable {
         );
 
         emit MarketItemCreated(itemId, tokenId, price, msg.sender, true);
-        _itemIds.increment();
 
         counter++;
     }
@@ -121,22 +122,23 @@ contract NFTMarket is ReentrancyGuard,Ownable {
 
         MarketItem storage market = idToMarketItem[_itemId];
 
-        address tokenOwner = IERC721(token).ownerOf(market.tokenId);
 
         require(
             msg.value == market.price,
             "amount not not equal to listing price"
         );
-
-        require(tokenOwner != address(0), "should not be zero address");
+        address tokenOwner = IERC721(token).ownerOf(market.tokenId);
 
         require(tokenOwner != msg.sender, "not owner");
 
         require(market.forSale, "not for sale");
 
         IERC721(token).transferFrom(market.owner, msg.sender, market.tokenId);
-
-        payable(market.owner).transfer(msg.value);
+        
+        uint256 _fee = (market.price * fee) / 100;
+        payable(owner()).transfer(_fee);
+        
+        payable(market.owner).transfer(msg.value - _fee);
 
         delete idToMarketItem[_itemId];
 
@@ -151,19 +153,19 @@ contract NFTMarket is ReentrancyGuard,Ownable {
         );
     }
 
-    function changeTokenPrice(uint256 _tokenId, uint256 _newPrice) public {
+    function changeTokenPrice(uint256 _itemId, uint256 _newPrice) public {
         require(msg.sender != address(0), "should not be zero address");
 
-        MarketItem storage market = idToMarketItem[_tokenId];
+        MarketItem storage market = idToMarketItem[_itemId];
 
         uint256 _oldPrice = market.price;
-        address tokenOwner = IERC721(token).ownerOf(_tokenId);
+        address tokenOwner = IERC721(token).ownerOf(_itemId);
 
         require(tokenOwner == msg.sender, "caller should be owner");
         market.price = _newPrice;
 
-        idToMarketItem[_tokenId] = market;
+        idToMarketItem[_itemId] = market;
 
-        emit PriceChanged(_tokenId, _oldPrice, _newPrice);
+        emit PriceChanged(_itemId, _oldPrice, _newPrice);
     }
 }
