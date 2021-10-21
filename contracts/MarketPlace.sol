@@ -14,7 +14,7 @@ contract NFTMarket is Ownable {
 
     constructor(address _nftToken,uint256 _fee) {
         token = IERC721(_nftToken);
-        fee = _fee; // 20 => 20%
+        fee = _fee; // i.e 20 => 20%
     }
 
 
@@ -127,6 +127,7 @@ contract NFTMarket is Ownable {
         payable(owner()).transfer(_fee);
         
         payable(market.owner).transfer(msg.value - _fee);
+        delete idToMarketItem[_itemId];
 
 
         emit MarketItemSold(
@@ -150,7 +151,6 @@ contract NFTMarket is Ownable {
         market.price = _newPrice;
 
         idToMarketItem[_itemId] = market;
-
         emit PriceChanged(_itemId, _oldPrice, _newPrice);
     }
 
