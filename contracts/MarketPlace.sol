@@ -2,14 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTMarket is ReentrancyGuard,Ownable {
+contract NFTMarket is Ownable {
     using Counters for Counters.Counter;
     Counters.Counter private _itemIds;
-    uint256 private counter = 0;
+    Counters.Counter private _itemsSold;
     uint256 private fee;
     IERC721 private token;
 
@@ -64,13 +63,14 @@ contract NFTMarket is ReentrancyGuard,Ownable {
     function listItem(uint256 tokenId, uint256 price) public {
         require(msg.sender != address(0), "address should not be zero");
         require(
-            token.ownerOf(tokenId) == msg.sender,
-            "You don't own this item"
-        );
-        require(
             token.getApproved(tokenId) == address(this),
             "Nft is not Approved. First Approve and then List"
         );
+        require(
+            token.ownerOf(tokenId) == msg.sender,
+            "You don't own this item"
+        );
+    
 
         _itemIds.increment();
         uint256 itemId = _itemIds.current();
@@ -85,21 +85,9 @@ contract NFTMarket is ReentrancyGuard,Ownable {
 
         emit MarketItemCreated(itemId, tokenId, price, msg.sender, true);
 
-        counter++;
+         _itemsSold.increment();
     }
 
-    function getListing() public view returns (MarketItem[] memory) {
-        MarketItem[] memory listedItems = new MarketItem[](counter);
-        if (counter == 0) {
-            return listedItems;
-        }
-        for (uint256 i = 0; i < counter; i++) {
-            if (idToMarketItem[i].forSale == true) {
-                listedItems[i] = idToMarketItem[i];
-            }
-        }
-        return listedItems;
-    }
 
     function unList(uint256 _itemId) public {
         MarketItem storage market = idToMarketItem[_itemId];
@@ -107,6 +95,7 @@ contract NFTMarket is ReentrancyGuard,Ownable {
             market.owner == msg.sender,
             "you can not unList this item, asyou are not the owner"
         );
+        delete idToMarketItem[_itemId];
         emit MarketItemUnListed(
             market.itemId,
             market.tokenId,
@@ -114,7 +103,6 @@ contract NFTMarket is ReentrancyGuard,Ownable {
             market.owner,
             market.forSale
         );
-        delete idToMarketItem[_itemId];
     }
 
     function buyNft(uint256 _itemId) public payable {
@@ -127,22 +115,19 @@ contract NFTMarket is ReentrancyGuard,Ownable {
             msg.value == market.price,
             "amount not not equal to listing price"
         );
-        address tokenOwner = IERC721(token).ownerOf(market.tokenId);
+        address tokenOwner = token.ownerOf(market.tokenId);
 
         require(tokenOwner != msg.sender, "not owner");
 
         require(market.forSale, "not for sale");
 
-        IERC721(token).transferFrom(market.owner, msg.sender, market.tokenId);
+        token.transferFrom(market.owner, msg.sender, market.tokenId);
         
         uint256 _fee = (market.price * fee) / 100;
         payable(owner()).transfer(_fee);
         
         payable(market.owner).transfer(msg.value - _fee);
 
-        delete idToMarketItem[_itemId];
-
-        counter--;
 
         emit MarketItemSold(
             market.itemId,
@@ -159,7 +144,7 @@ contract NFTMarket is ReentrancyGuard,Ownable {
         MarketItem storage market = idToMarketItem[_itemId];
 
         uint256 _oldPrice = market.price;
-        address tokenOwner = IERC721(token).ownerOf(_itemId);
+        address tokenOwner = token.ownerOf(_itemId);
 
         require(tokenOwner == msg.sender, "caller should be owner");
         market.price = _newPrice;
@@ -168,4 +153,48 @@ contract NFTMarket is ReentrancyGuard,Ownable {
 
         emit PriceChanged(_itemId, _oldPrice, _newPrice);
     }
+
+
+      /* Returns all unsold market items */
+  function fetchMarketItems() public view returns (MarketItem[] memory) {
+    uint itemCount = _itemIds.current();
+    uint unsoldItemCount = _itemIds.current() -_itemsSold.current();
+    uint currentIndex = 0;
+
+    MarketItem[] memory items = new MarketItem[](unsoldItemCount);
+    for (uint i = 0; i < itemCount; i++) {
+      if (idToMarketItem[i + 1].forSale) {
+        uint currentId = i + 1;
+        MarketItem storage currentItem = idToMarketItem[currentId];
+        items[currentIndex] = currentItem;
+        currentIndex += 1;
+      }
+    }
+    return items;
+  }
+
+  /* Returns onlyl items that a user has purchased */
+  function fetchMyNFTs() public view returns (MarketItem[] memory) {
+    uint totalItemCount = _itemIds.current();
+    uint itemCount = 0;
+    uint currentIndex = 0;
+
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idToMarketItem[i + 1].owner == msg.sender) {
+        itemCount += 1;
+      }
+    }
+
+    MarketItem[] memory items = new MarketItem[](itemCount);
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idToMarketItem[i + 1].owner == msg.sender) {
+        uint currentId = i + 1;
+        MarketItem storage currentItem = idToMarketItem[currentId];
+        items[currentIndex] = currentItem;
+        currentIndex += 1;
+      }
+    }
+    return items;
+  }
+
 }
